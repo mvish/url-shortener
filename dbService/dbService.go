@@ -8,6 +8,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+// Struct type replicating url table
 type url struct {
 	shortURL string
 	longURL string
@@ -18,10 +19,14 @@ type url struct {
 
 var db *sql.DB
 
+// Opens a connection to database
+// Pings the database to check if it is in usable state
+// Creates tables url
 func InitDB() {
 	var err error
     db, err = sql.Open("sqlite3", "database/URLShortener.db")
     if err != nil {
+    	log.Println("Failed to connect to database/URLShortener.db")
         log.Fatal(err)
     }
     
@@ -29,24 +34,22 @@ func InitDB() {
 
     pingErr := db.Ping()
     if pingErr != nil {
+    	log.Println("Connected to database but Ping returned no response")
         log.Fatal(pingErr)
     }
     
-    db.Exec("create table if not exists url (shortURL text, longURL text, created text, expiration string, total_calls int)")
+    _, err = db.Exec("create table if not exists url (shortURL text, longURL text, created text, expiration string, total_calls int)")
 
-    fmt.Println(db);
+    if err != nil {
+    	log.Println("Failed to initialize tables")
+    }
+
+    log.Println("Connected to database/URLShortener.db and tables initialized successfully")
     fmt.Println("Connected to database successful")
 }
 
-//	fmt.Println(db.Ping());
-//	_, err := db.Exec("create table if not exists url (shortURL text, longURL text, created text, expiration string, total_calls int)")
-//	if (err != nil) {
-//		return 1, fmt.Errorf("init-table-failed %v")
-//	}
-
-//	return 0, nil
-//}
-
+// Gets the long URL associated with a short URL
+// Returns the long URL associated with a short URL
 func GetLongURL(shortURL string) (string, error) {
 	var longURL, expiration string
 
@@ -58,24 +61,40 @@ func GetLongURL(shortURL string) (string, error) {
     log.Println("longURL from db", longURL)
     log.Println("expiration from db:", expiration)
 
-    if(expiration != "") {
-    const dateform = "2006-01-02"
-    exp, _ := time.Parse(dateform, expiration)
-    
-    log.Println("expiration date:", exp)
-
-	if(time.Now().After(exp)) {
-		DeleteShortURL(shortURL)
-		longURL = ""
-	 }
+    // If the URL has an expiration date, check if it is expired
+    // If the URL is expired delete the entry for that URL
+    if(expiration != "") {   
+		if(URLExpired(shortURL, expiration)) {
+			DeleteShortURL(shortURL)
+			longURL = ""
+	 	}
     }
+
     log.Println("longURL to send:", longURL)
 
-	UpdateTotalCalls(shortURL)
+    // If the URL is not expired, update the number of total calls
+    if longURL != "" {
+	callsUpdated, err := UpdateTotalCalls(shortURL)
+	if(err != nil) {
+		log.Println("Failed to update total calls for url:", shortURL)
+	}
+    
+    log.Println("Total calls for shortURL" ,shortURL, "updated to ", callsUpdated)
+
+    }
+    
 
     return longURL, nil    
-}                                                  
+}
 
+// Check if a short URL is expired
+func URLExpired(shortURL string, expiration string) bool {
+	const dateform = "2006-01-02"
+    exp, _ := time.Parse(dateform, expiration)
+    return time.Now().After(exp)
+}
+
+// Saves the short URL, long URL, date created, expiration and total calls in database                                                  
 func SaveShortURL(shortURL string, longURL string, expiration string) (int64, error) {
 	log.Println(db)
 	log.Println(shortURL)
@@ -87,30 +106,24 @@ func SaveShortURL(shortURL string, longURL string, expiration string) (int64, er
 	 return 0, fmt.Errorf("insert-failed %v")
 	}
 	
-	res, err := result.RowsAffected()
-
-	if(err != nil) {
-		return 0, fmt.Errorf("no-rows-affected %v")
-	}
+	res, _ := result.RowsAffected()
 
 	return res, nil
 }
 
+// Deletes a short URL once it is expired
 func DeleteShortURL(shortURL string) (int64, error) {
 	result, err := db.Exec("delete from url where shortURL = ?", shortURL)
 	if err != nil {
 	 return 0, fmt.Errorf("update-failed %v")
 	}
 	
-	res, err := result.RowsAffected()
-
-	if(err != nil) {
-		return 0, fmt.Errorf("no-rows-affected %v")
-	}
+	res, _ := result.RowsAffected()
 
 	return res, nil
 }
 
+// Gets the total number of times a URL has been called since its creation
 func getURLTotalCalls(shortURL string) (int, error) {
 	 var totalCalls int
 	if err := db.QueryRow("select total_calls from url where shortURL = ?", shortURL).Scan(&totalCalls); err != nil {
@@ -120,26 +133,21 @@ func getURLTotalCalls(shortURL string) (int, error) {
     return totalCalls, nil
 }
 
+// Updates the total number of times a URL has been called
 func UpdateTotalCalls(shortURL string) (int64, error) {
-	_, err := getURLTotalCalls(shortURL)
-	if err != nil {
-		return 0, fmt.Errorf("failed-calls-update %v")
-	}
-	result, err := db.Exec("update url set total_calls = ? where shortURL = ?", shortURL)
+	calls, _ := getURLTotalCalls(shortURL)
+	result, err := db.Exec("update url set total_calls = ? where shortURL = ?", calls+1, shortURL)
 
 	if err != nil {
 	 return 0, fmt.Errorf("update-failed %v")
 	}
 	
-	res, err := result.RowsAffected()
-
-	if(err != nil) {
-		return 0, fmt.Errorf("no-rows-updated %v")
-	}
+	res, _ := result.RowsAffected()
 
 	return res, nil
 }
 
+// Checks if a short URL exists in the database
 func RandomKeyExistsQ(shortURL string) (bool, error) {
 	log.Println(db)
 	log.Println(shortURL)
