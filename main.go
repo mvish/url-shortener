@@ -28,7 +28,7 @@ func main() {
 	dbService.InitDB()
 
 	urlExpandHandler := http.HandlerFunc(urlExpandAndRedirectOperation)
-	http.Handle("/", urlExpandHandler)
+	http.Handle("/u/", urlExpandHandler)
 
 	urlShortenHandler := http.HandlerFunc(urlOperations)
 	http.Handle("/url", urlShortenHandler)
@@ -40,7 +40,7 @@ func main() {
 }
 
 func urlExpandAndRedirectOperation(w http.ResponseWriter, r *http.Request) {
-	path := r.URL.Path[1:]
+	path := r.URL.Path[2:][1:]
 	log.Println("Path:", path)
 	longURL, err := service.GetLongURL(path)
 	 if(err != nil) {
@@ -52,7 +52,6 @@ func urlExpandAndRedirectOperation(w http.ResponseWriter, r *http.Request) {
     } else {
 		setErrorResponse(w,"not-found", "Requested URL does not exist or is expired", http.StatusOK)
 	}
-
 }
 
 func urlOperations(w http.ResponseWriter, r *http.Request) {
