@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"log"
+	"strings"
 	"net/http"
 	"encoding/json"
     "mili.photos/service"
@@ -30,8 +31,11 @@ func main() {
 	urlExpandHandler := http.HandlerFunc(urlExpandAndRedirectOperation)
 	http.Handle("/u/", urlExpandHandler)
 
-	urlShortenHandler := http.HandlerFunc(urlOperations)
+	urlShortenHandler := http.HandlerFunc(createURLOperation)
 	http.Handle("/url", urlShortenHandler)
+
+	urlShortenAPIHandler := http.HandlerFunc(urlShortenAPIOperations)
+	http.Handle("/v1/url", urlShortenAPIHandler)
 
 	fs := http.FileServer(http.Dir("static/"))
     http.Handle("/static/", http.StripPrefix("/static/", fs))
@@ -39,27 +43,46 @@ func main() {
 	http.ListenAndServe(":8080", nil)
 }
 
+// Handler for getting long URL associated with a short one and redirecting
 func urlExpandAndRedirectOperation(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Path[2:][1:]
-	log.Println("Path:", path)
 	longURL, err := service.GetLongURL(path)
-	 if(err != nil) {
+	 if err != nil {
 		setErrorResponse(w,"internal-error", err.Error(), http.StatusInternalServerError)
+		return;
 	}
 
-	 if(longURL != "") { 
-        http.Redirect(w, r, longURL, http.StatusMovedPermanently)
+	if longURL != "" { 
+        http.Redirect(w, r, longURL, http.StatusFound)
     } else {
 		setErrorResponse(w,"not-found", "Requested URL does not exist or is expired", http.StatusOK)
 	}
 }
 
-func urlOperations(w http.ResponseWriter, r *http.Request) {
-	if(r.URL.Path != "/url") {
-		http.NotFound(w,r)
-		return
+// Handler for creating a new short URL given a long URL
+func createURLOperation(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+
+	if strings.TrimSpace(r.FormValue("url_long")) == "" {
+        setErrorResponse(w, "missing-long-url", "Long URL is required to create a short URL", http.StatusBadRequest)
+        return;
+    }
+
+ 	shortURL, errService, status := service.CreateAndSaveShortURL(r.FormValue("url_long"), r.FormValue("url_alias"), r.FormValue("url_exp"))
+    if errService != nil {
+		setErrorResponse(w, "internal-error", errService.Error(), status)
+		http.Redirect(w, r, "/static/index.html?error="+"unableToCreate" , http.StatusFound)
+		return;
 	}
 
+	http.Redirect(w, r, "/static/index.html?created="+shortURL , http.StatusFound)
+
+}
+
+// Handler for REST APIs
+// GET /v1/url
+// POST /v1/url
+func urlShortenAPIOperations(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET": 
 		query := r.URL.Query()
@@ -71,96 +94,83 @@ func urlOperations(w http.ResponseWriter, r *http.Request) {
 		}
            
 		shortURL := param[0];
-		log.Println("shortURL to get", shortURL)
-		// pass this shortURL to db to get the original URL and redirect to it
 		longURL, err := service.GetLongURL(shortURL)
-        if(err != nil) {
-		setErrorResponse(w,"internal-error", err.Error(), http.StatusInternalServerError)
+        if err != nil {
+			setErrorResponse(w,"internal-error", err.Error(), http.StatusInternalServerError)
+			return;
 		}
         
-        log.Println("longURL from get", longURL)
+        response := make(map[string]string)
+		response["shortURL"] = shortURL
+		response["longURL"] = longURL
 
-        if(longURL != "") { 
-        http.Redirect(w, r, longURL, http.StatusMovedPermanently)
-        } else {
-		setErrorResponse(w,"not-found", "Requested URL does not exist or is expired", http.StatusOK)
-		}
+		setResponse(w, response, 200)
+
         
 	case "POST":
- 		r.ParseForm()
-
- 		 url, errService := service.CreateAndSaveShortURL(r.FormValue("url_long"), r.FormValue("url_alias"), r.FormValue("url_exp"))
-        if(errService != nil) {
-			setErrorResponse(w, "internal-error", errService.Error(), http.StatusInternalServerError)
-	    }
-
-	    w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(201)
-		response := make(map[string]string)
-		response["shortURL"] = url
-		response["longURL"] = r.FormValue("url_long")
-		jsonResponse, _ := json.Marshal(response)
-		w.Write(jsonResponse)
-
-		/*log.Println("creating shortURL")
+		log.Println("Creating short URL")
 		contentType := r.Header.Get("Content-Type")
 		if contentType != "application/json" {
+			log.Println("urlShortenAPIOperations: content-type is not application/json")
 	        setErrorResponse(w, "invalid-content-type", "Content type is not application/json", http.StatusUnsupportedMediaType)
 		return;
 		}
-		log.Println("checked content type")
 
 		var urlInfo urlShort
 
 		decoder := json.NewDecoder(r.Body)
-		//decoder.DisallowUnknownFields()
+		decoder.DisallowUnknownFields()
 		err := decoder.Decode(&urlInfo)
 
-		log.Println("decoded url info")
-		log.Println(urlInfo.LongURL)
-
 		if err != nil {
+		   log.Println("urlShortenAPIOperations: malformed json in request body: ", err)	
 		   setErrorResponse(w, "malformed-json", "Error parsing request." + err.Error(), http.StatusBadRequest)
+		   return;
 		}
 
         log.Println("creating shortURL")
+
+        // Check if a long URL is provided, this field is required
+        if strings.TrimSpace(urlInfo.LongURL) == "" {
+        	setErrorResponse(w, "missing-long-url", "Long URL is required to create a short URL", http.StatusBadRequest)
+        	return;
+        }
+
                 
-        // to do: url here needs to be sent as response
-        url, errService := service.CreateAndSaveShortURL(urlInfo.LongURL, urlInfo.Alias, urlInfo.Expiration)
-            if(errService != nil) {
-			setErrorResponse(w, "internal-error", err.Error(), http.StatusInternalServerError)
+        shortURL, errService, status := service.CreateAndSaveShortURL(urlInfo.LongURL, urlInfo.Alias, urlInfo.Expiration)
+        if errService != nil {
+        	log.Println("urlShortenAPIOperations: Failed to create short URL for url: ", urlInfo.LongURL)		
+			setErrorResponse(w, errService.Error(), "Failed to create short url", status)
+			return;
 	    }
 
-	    if errService != nil {
-	    	log.Println(errService)
-	    }
 
-		log.Println(url)
-
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(201)
 		response := make(map[string]string)
-		response["shortURL"] = url
+		response["shortURL"] = shortURL
 		response["longURL"] = urlInfo.LongURL
-		jsonResponse, _ := json.Marshal(response)
-		w.Write(jsonResponse)*/
-				
-				//setResponse(w, url, urlInfo.LongURL, http.StatusCreated)
-
-            	// fmt.Fprintln(w,"%s: %s\n", "LongURL", urlInfo.LongURL)
-            	// fmt.Fprintln(w,"%s: %s\n", "Alias", urlInfo.Alias)
-            	// fmt.Fprintln(w,"%s: %s\n", "Expiration", urlInfo.Expiration
-
+		
+		setResponse(w, response, 201)
 	}
 }
 
-func setErrorResponse(w http.ResponseWriter, errorCode string, message string, httpStatusCode int) {
+// Sets the response JSON
+func setResponse(w http.ResponseWriter, response map[string]string, httpStatusCode int) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(httpStatusCode)
+	jsonResponse, _ := json.Marshal(response)
+	w.Write(jsonResponse)
+}
+
+// Sets the response JSON for errors
+func setErrorResponse(w http.ResponseWriter, errorCode string, errorMessage string, httpStatusCode int) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(httpStatusCode)
 	response := make(map[string]string)
 	response["errorCode"] = errorCode
-	response["message"] = message
+	response["errorMessage"] = errorMessage
 	jsonResponse, _ := json.Marshal(response)
 	w.Write(jsonResponse)
 }
+
+
 
