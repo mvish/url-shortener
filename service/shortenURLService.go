@@ -114,7 +114,7 @@ func validateLongURL(longURL string) bool {
 // Checks if a given alias is valid or not
 func validateAlias(alias string) bool {
 	exp := regexp.MustCompile("^[a-zA-Z0-9]*$")
-	if len(alias) <= 8 {
+	if len(alias) <= 50 {
 		return exp.MatchString(alias)
 	}
 
