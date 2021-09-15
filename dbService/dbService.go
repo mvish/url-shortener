@@ -18,9 +18,11 @@ type url struct {
 }
 
 type URLCount struct {
-	url string
-	totalCalls int
+	Url string
+	TotalCalls int
 }
+
+type TopUrls []URLCount
 
 var db *sql.DB
 
@@ -154,13 +156,14 @@ func URLExistsQ(shortURL string) (bool, error) {
     return exists == 1, nil
 }
 
-// Analytics related functions
+// Analytics handlers
 
-// Gets the top 5 most called URLs
-func TopFiveURLs() ([]URLCount, error) {
-	var urlCount []URLCount
+// Gets the top n most called URLs
+func Top(limit string) ([]URLCount, error) {
+	//urlToCountMap := make(map[string]int)
+	var urlCount TopUrls
 
-	rows, err := db.Query("select short_url, total_calls from url order by total_calls desc limit 5")
+	rows, err := db.Query("select short_url, total_calls from url order by total_calls desc limit ?", limit)
 	if(err != nil) {
 		log.Println("dbService: Failed to get top 5 URLs")
 		return nil, errors.New("failure:get-top-five-urls")
@@ -170,7 +173,7 @@ func TopFiveURLs() ([]URLCount, error) {
 
 	for rows.Next() {
 		var urlCountRow URLCount
-		if err := rows.Scan(&urlCountRow.url, &urlCountRow.totalCalls); err != nil {
+		if err := rows.Scan(&urlCountRow.Url, &urlCountRow.TotalCalls); err != nil {
 			log.Println("dbService: Failed to scan a row from top 5 URLs")
 			return nil, errors.New("failure:get-top-five-row")
 		}
@@ -195,25 +198,25 @@ func UpdateHourlyCalls(startTime string, shortURL string) (bool, error) {
 }
 
 // Gets the total calls for a URL in the past n hours
-func GetURLCountPastnHours(n string, shortURL string) (int) {
+func GetURLCountPastnHours(shortURL string, n string) (int, error) {
 	var sumCount int
-	if err := db.QueryRow("select sum(count) from url_count_hourly where short_url = ? and datetime('now') >= datetime(start_time, ?)", shortURL, "-" + n + "Hour").Scan(&sumCount); err != nil {
-		log.Println("dbService: Getting count for past ", n, "hours failed for short url: ", shortURL, err)
-		return 0
+	if err := db.QueryRow("select sum(count) from url_count_hourly where short_url = ? and datetime('now') >= datetime(start, ?)", shortURL, "-" + n + " Hour").Scan(&sumCount); err != nil {
+		log.Println("dbService: Getting count for past ", n, "hours failed for short url:", shortURL, sumCount, err)
+		return 0, errors.New("failure:url-count-by-hours")
 	}
 
-	return sumCount
+	return sumCount, nil
 }
 
 // Gets the total calls for a URL in the past n days
-func GetURLCountPastnDays(n string, shortURL string) (int) {
+func GetURLCountPastnDays(shortURL string, n string) (int, error) {
 	var sumCount int
-	if err := db.QueryRow("select sum(count) from url_count_hourly where short_url = ? and date() >= date(start_time, ?)", shortURL, "-" + n + "Day").Scan(&sumCount); err != nil {
+	if err := db.QueryRow("select sum(count) from url_count_hourly where short_url = ? and date() >= date(start, ?)", shortURL, "-" + n + " Day").Scan(&sumCount); err != nil {
 		log.Println("dbService: Getting count for past ", n, "days failed for short url: ", shortURL, err)
-		return 0
+		return 0, errors.New("failure:url-count-by-days")
 	}
 
-	return sumCount
+	return sumCount, nil
 }
 
 
