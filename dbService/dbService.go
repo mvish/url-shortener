@@ -67,9 +67,15 @@ func GetLongURL(shortURL string) (string, bool, error) {
 	var longURL, expiration string
 	deleted := false
 
-    if err := db.QueryRow("select long_url, expiration from url where short_url = ?", shortURL).Scan(&longURL, &expiration); err != nil {
-		log.Println("dbService: Failed to get long URL for ", shortURL, " assigning longURL to empty string")
-		return shortURL, false, errors.New("failure:get-long-url")
+    err := db.QueryRow("select long_url, expiration from url where short_url = ?", shortURL).Scan(&longURL, &expiration);
+
+    if err != nil {
+       if err == sql.ErrNoRows {
+            return shortURL, true, errors.New("failure:no-rows-found")
+       } else {
+            log.Println("dbService: Failed to get long URL for ", shortURL, " assigning longURL to empty string")
+            return shortURL, false, errors.New("failure:get-long-url")
+        }
 	}
 
 
@@ -165,8 +171,12 @@ func Top(limit string) ([]URLCount, error) {
 
 	rows, err := db.Query("select short_url, total_calls from url order by total_calls desc limit ?", limit)
 	if(err != nil) {
+		if err == sql.ErrNoRows {
+			return urlCount, errors.New("failure:no-rows-found")
+		} else {
 		log.Println("dbService: Failed to get top 5 URLs")
 		return nil, errors.New("failure:get-top-five-urls")
+		}
 	}
 
 	defer rows.Close()

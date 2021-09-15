@@ -76,11 +76,11 @@ func CreateAndSaveShortURL(longURL string, alias string, expiration string) (str
 }
 
 // Gets the long URL associated with a short URL
-func GetLongURL(shortURL string) (string, error) {
-    url, deleted,  err := dbService.GetLongURL(shortURL)
+func GetLongURL(shortURL string) (string, bool, error) {
+    url, deleted, err := dbService.GetLongURL(shortURL)
     if err != nil {
     	log.Println("shortenURLService: Failed to get long URL for: ", shortURL)
-    	return url, errors.New("failure:failed-get-long-url")
+    	return url, deleted, errors.New("failure:failed-get-long-url")
     }
 
     // If the URL is not expired, update the number of total calls and hourly calls
@@ -98,11 +98,11 @@ func GetLongURL(shortURL string) (string, error) {
 			log.Println("dbService: Failed to update total calls for url:", shortURL)
 		}
     
-    	log.Println("dbService: Total calls for shortURL" ,shortURL, "updated to ", totalCallsUpdated)
+    	log.Println("dbService: Total calls for shortURL" ,shortURL, "updated by ", totalCallsUpdated)
 
 	}
 
-    return url, nil
+    return url, deleted, nil
 }
 
 // Checks if a given URL is valid or not
