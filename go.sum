@@ -1,4 +1,8 @@
+github.com/flyaways/golang-lru v0.0.0-20190617091412-ec8b77fcae6c h1:1GknQN7dpEKszaN0gXKQ7NpN2xKgaz/sfrVEA5uicmo=
+github.com/flyaways/golang-lru v0.0.0-20190617091412-ec8b77fcae6c/go.mod h1:HdAYFm/daLpg9ApijkwVfBZwoxj8fltq+k4C5IFOr1c=
 github.com/google/uuid v1.3.0 h1:t6JiXgmwXMjEs8VusXIJk2BXHsn+wx8BZdTaoZ5fu7I=
 github.com/google/uuid v1.3.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
+github.com/hashicorp/golang-lru v0.5.4 h1:YDjusn29QI/Das2iO9M0BHnIbxPeyuCHsjMW+lJfyTc=
+github.com/hashicorp/golang-lru v0.5.4/go.mod h1:iADmTwqILo4mZ8BN3D2Q6+9jd8WM5uGBxy+E8yxSoD4=
 github.com/mattn/go-sqlite3 v1.14.8 h1:gDp86IdQsN/xWjIEmr9MF6o9mpksUgh0fu+9ByFxzIU=
 github.com/mattn/go-sqlite3 v1.14.8/go.mod h1:NyWgC/yNuGj7Q9rpYnZvas74GogHl5/Z4A/KQRfk6bU=
