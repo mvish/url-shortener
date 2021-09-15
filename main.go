@@ -20,6 +20,7 @@ type urlShort struct {
 }
 
 var cache lru.LRUCache
+const apiURL = "/api/v1/url/"
 
 func main() {
         
@@ -41,7 +42,7 @@ func main() {
     http.Handle("/url", urlShortenHandler)
 
     urlShortenAPIHandler := http.HandlerFunc(urlShortenAPIOperations)
-    http.Handle("/api/v1/url/", urlShortenAPIHandler)
+    http.Handle(apiURL, urlShortenAPIHandler)
 
     urlAnalyticsHandler := http.HandlerFunc(urlAnalyticsOperations)
     http.Handle("/api/v1/analytics/", urlAnalyticsHandler)
@@ -108,18 +109,17 @@ func createURLOperation(w http.ResponseWriter, r *http.Request) {
 func urlShortenAPIOperations(w http.ResponseWriter, r *http.Request) {
     switch r.Method {
     case "GET":
-        query := r.URL.Query()
-        param := query["shortURL"]
+        shortURL := strings.TrimPrefix(r.URL.Path, apiURL)
 
-        if len(param[0]) < 1 {
+        if len(shortURL) < 1 {
             log.Println("Url param 'shortURL' is missing")
+            setErrorResponse(w,"short-url-missing", "No short URL provided", http.)
             return
         }
-           
-        shortURL := param[0];
+
         longURL, _, err := service.GetLongURL(shortURL)
         if err != nil {
-            setErrorResponse(w,"internal-error", err.Error(), http.StatusInternalServerError)
+            setErrorResponse(w, "not-found", err.Error(), http.StatusNotFound)
             return
         }
         
@@ -172,20 +172,17 @@ func urlShortenAPIOperations(w http.ResponseWriter, r *http.Request) {
         setResponse(w, response, 201)
 
     case "DELETE":
-        log.Println("Deleting URL")
-        query := r.URL.Query()
-        param := query["shortURL"]
+        shortURL := strings.TrimPrefix(r.URL.Path, apiURL)
 
-        if len(param[0]) < 1 {
+        if len(shortURL) < 1 {
             log.Println("Url param 'shortURL' is missing")
             return
         }
            
-        shortURL := param[0];
         rowsAffected, err := dbService.DeleteShortURL(shortURL)
         if err != nil || rowsAffected < 1 {
             log.Println("Failed to delete short URL:", shortURL, "error: ", err)
-            setErrorResponse(w,"internal-error", err.Error(), http.StatusInternalServerError)
+            setErrorResponse(w, err.Error(), "An internal error occurred while deleting short URL", http.StatusInternalServerError)
             return
         }
 
