@@ -8,6 +8,7 @@ import (
 	"encoding/json"
     "mili.photos/service"
     "mili.photos/dbService"
+    lru "github.com/flyaways/golang-lru"
 )
 
 
@@ -16,6 +17,8 @@ type urlShort struct {
 	Alias  string `json:"alias"`
 	Expiration  string `json:"expiration"`
 }
+
+var cache lru.LRUCache
 
 func main() {
         
@@ -28,6 +31,8 @@ func main() {
 
 	dbService.InitDB()
 
+	cache, _ = lru.New(200)
+ 
 	urlExpandHandler := http.HandlerFunc(urlExpandAndRedirectOperation)
 	http.Handle("/u/", urlExpandHandler)
 
@@ -49,13 +54,22 @@ func main() {
 // Handler for getting long URL associated with a short one and redirecting
 func urlExpandAndRedirectOperation(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Path[2:][1:]
+	var longURLInterface interface{}
 	var longURL string
 	var err error
 
-	longURL, err = service.GetLongURL(path)
-	if err != nil {
-		setErrorResponse(w,"internal-error", err.Error(), http.StatusInternalServerError)
-		return
+	// Check if the requested URL is in cache
+	if cache.Contains(path) {
+		longURLInterface, _ = cache.Get(path)
+		longURL = longURLInterface.(string)
+	} else {
+		// If the requested URL is not cached then request it from database
+		longURL, err = service.GetLongURL(path)
+		if err != nil {
+			setErrorResponse(w,"internal-error", err.Error(), http.StatusInternalServerError)
+			return
+		}
+		cache.Add(path, longURL)
 	}
 
 	if longURL != "" { 
