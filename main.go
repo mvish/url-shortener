@@ -40,8 +40,8 @@ func main() {
 	urlAnalyticsHandler := http.HandlerFunc(urlAnalyticsOperations)
 	http.Handle("/api/v1/analytics/", urlAnalyticsHandler)
 
-	fs := http.FileServer(http.Dir("static/"))
-    http.Handle("/static/", http.StripPrefix("/static/", fs))
+    fs := http.FileServer(http.Dir("static/"))
+    http.Handle("/", fs)
 
 	http.ListenAndServe(":8080", nil)
 }
@@ -49,8 +49,11 @@ func main() {
 // Handler for getting long URL associated with a short one and redirecting
 func urlExpandAndRedirectOperation(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Path[2:][1:]
-	longURL, err := service.GetLongURL(path)
-	 if err != nil {
+	var longURL string
+	var err error
+
+	longURL, err = service.GetLongURL(path)
+	if err != nil {
 		setErrorResponse(w,"internal-error", err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -74,11 +77,11 @@ func createURLOperation(w http.ResponseWriter, r *http.Request) {
  	shortURL, errService, status := service.CreateAndSaveShortURL(r.FormValue("url_long"), r.FormValue("url_alias"), r.FormValue("url_exp"))
     if errService != nil {
 		setErrorResponse(w, "internal-error", errService.Error(), status)
-		http.Redirect(w, r, "/static/index.html?error="+"unableToCreate" , http.StatusFound)
+		http.Redirect(w, r, "/index.html?error="+"failed-create-url" , http.StatusFound)
 		return
 	}
 
-	http.Redirect(w, r, "/static/index.html?created="+shortURL , http.StatusFound)
+	http.Redirect(w, r, "/index.html?created="+shortURL , http.StatusFound)
 
 }
 
