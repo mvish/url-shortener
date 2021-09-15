@@ -12,6 +12,8 @@ require (
 )
 
 require (
+	github.com/flyaways/golang-lru v0.0.0-20190617091412-ec8b77fcae6c // indirect
 	github.com/google/uuid v1.3.0 // indirect
+	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/mattn/go-sqlite3 v1.14.8 // indirect
 )
