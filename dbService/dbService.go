@@ -196,7 +196,7 @@ func Top(limit string) ([]URLCount, error) {
 
 // Updates the hourly total calls for a URL
 func UpdateHourlyCalls(startTime string, shortURL string) (bool, error) {
-	result, err := db.Exec("insert into url_count_hourly (start, short_url, count) values (?, ?, ?) on conflict (start, short_url) do update set count = count+1", startTime, shortURL, 1)
+	result, err := db.Exec("insert into url_count_hourly (start, short_url, count) values (?, ?, ?) on conflict (start, short_url) do update set count = count+1", startTime, shortURL, 0)
 	if err != nil {
 		log.Println("dbService: Updating hourly count failed for short url: ", shortURL, err)
 		return false, errors.New("failure:db-update-hourly")
