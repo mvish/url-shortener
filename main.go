@@ -124,7 +124,7 @@ func urlShortenAPIOperations(w http.ResponseWriter, r *http.Request) {
 
         longURL, _, err := service.GetLongURL(shortURL)
         if err != nil {
-            setErrorResponse(w, "not-found", err.Error(), http.StatusNotFound)
+            setErrorResponse(w, "url-not-found", err.Error(), http.StatusNotFound)
             return
         }
         
@@ -181,6 +181,7 @@ func urlShortenAPIOperations(w http.ResponseWriter, r *http.Request) {
 
         if len(shortURL) < 1 {
             log.Println("Url param 'shortURL' is missing")
+            setErrorResponse(w, "missing-short-url", "A short URL is required", http.StatusBadRequest)
             return
         }
            
