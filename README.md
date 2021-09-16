@@ -255,13 +255,14 @@ If no short URL is provided:
 - User accounts
 - Creating multiple short URLs
 - Handling multiple requests
-- Additional short URL information that can be saved:
-  - domain
-  - geo location of where it was requested from
+- Short URL improvements that can be useful to have:
+  - adding a domain
+  - saving geo location of where it was requested from
   - support for unicode characters
-  - support for more characters allowing for more descriptive URLs
+  - support for more characters allowing for better descriptive URLs
+  - way to avoid generating conflicting URLs. In the current implementation random URLs are fixed to length 8. This can lead to possibilty of running out of all combinations for URL at some point.
 - Better database schema design, especially for analytics
-  - in the current design the database stores only hourly calls for a URL and all APIs use this data to compute calls in past
+  - in the current design the database stores only hourly calls for a URL and all APIs use this data to compute calls in past hour or day
   - the data can be aggregated beforehand and stored is separate tables. This lets it to be used for a separate analytics service
 
 ## References:
