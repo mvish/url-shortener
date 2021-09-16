@@ -2,42 +2,29 @@
 
 URL Shortener is an application designed to provide a short and descriptive URL for a given long URL.
 
-## Build and deploy URL Shortener
+## Install URL Shortener
 
-### Build from GitHub
+- Clone the project from: https://github.com/mvish/url-shortener
+  `git clone git@github.com:mvish/url-shortener.git`
+- `cd url-shortener`
 
-- Check out the project from: https://github.com/mvish/url-shortener
 
-- If the current directory is not url-shortener, `cd` to the directory
+### From Source
 
-	```cd url-shortener```
+- Install Golang: [https://golang.org/dl/](https://golang.org/dl/)
 
-- Run the following command to build and run the application
+- Build and run the application: `go build && go run .`
 
-	```go build && go run .```
+### Docker
 
-### Build from container
-
-To build and deploy using container, make sure [Docker Desktop](https://www.docker.com/products/docker-desktop) is installed and running.
-
-- Change to the url-shortener directory
-	
-	```cd url-shortener```
-
-- Build the application:
-
-	```docker build -t url-shortener .```
-
-- Run the application:
-
-	```docker run -p 8080:8080 -it url-shortener```
+- Install Docker: https://docs.docker.com/get-docker/
+- Build the container: `docker build -t url-shortener .`
+- Run the application: `docker run -p 8080:8080 -it url-shortener`
 
 ## Usage
 
-- Go to `http://localhost:8080` to launch the form to create short URL
-
+- Go to `http://localhost:8080` to launch the form to create short URL. Replace `localhost` with your hostname.
 - To create a short URL:
-
   - In the form provide a long URL, optionally provide an alias and an expiration
   - Click on `Create Short URL`
   - The created short URL will appear at the bottom, click on it to re-direct to original URL
@@ -72,13 +59,17 @@ Given a short URL gets and redirects to its original URL.
 If no short URL is provided:
 
 ```json
-{"errorCode": "short-url-missing"}
+{
+    "errorCode": "short-url-missing"
+}
 ```
 
 If no long URL is found:
 
 ```json
-{"errorCode": "url-not-found"}
+{
+    "errorCode": "url-not-found"
+}
 ```
 
 ### POST
@@ -115,13 +106,17 @@ Fields `longURL`, `alias` and `expiration` are used to create the short URL. Fol
 If the request body is not valid:
 
 ```json
-{"errorCode": "malformed-json"}
+{
+    "errorCode": "malformed-json"
+}
 ```
 
 If the long URL is missing:
 
 ```json
-{"errorCode": "missing-long-url"}
+{
+    "errorCode": "missing-long-url"
+}
 ```
 
 ### DELETE
@@ -137,7 +132,9 @@ Deletes a short URL.
 URL to be deleted does not exist:
 
 ```json
-{"errorCode": "missing-short-url"}
+{
+    "errorCode": "missing-short-url"
+}
 ```
 
 ## URL shortener analytics API
@@ -175,7 +172,9 @@ Gets the top "n" visited short URLs. If no `limit` is provided, top five URLs ar
 If no rows exists or a database failure occurs:
 
 ```json
-{"errorCode": "failure:get-top-five-row"}
+{
+    "errorCode": "failure:get-top-five-row"
+}
 ```
 
 ## URL[/api/v1/analytics/{shortURL}]
@@ -207,13 +206,17 @@ Gets the number of times a short URL has been visited in the past "n hours" or "
 If no parameters are provided:
 
 ```json
-{"errorCode": "no-params-found"}
+{
+    "errorCode": "no-params-found"
+}
 ```
 
 If no short URL is provided:
 
 ```json
-{"errorCode": "shortURL-not-found"}
+{
+    "errorCode": "shortURL-not-found"
+}
 ```
 
 # Developer documentation
