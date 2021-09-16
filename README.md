@@ -160,7 +160,9 @@ Deletes a short URL.
 
 URL to be deleted does not exist:
 
-    ```{"errorCode": "missing-short-url"}```
+```json
+{"errorCode": "missing-short-url"}
+```
 
 
 ## URL shortener analytics API
