@@ -47,7 +47,7 @@ func main() {
     http.Handle(apiURL, urlShortenAPIHandler)
 
     urlAnalyticsHandler := http.HandlerFunc(urlAnalyticsOperations)
-    http.Handle("/api/v1/analytics/", urlAnalyticsHandler)
+    http.Handle(timeAnalyticsURL, urlAnalyticsHandler)
 
     topUrlAnalyticsHandler := http.HandlerFunc(topUrlAnalyticsOperations)
     http.Handle("/api/v1/analytics/top/", topUrlAnalyticsHandler)
