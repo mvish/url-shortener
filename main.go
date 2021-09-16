@@ -197,7 +197,7 @@ func urlShortenAPIOperations(w http.ResponseWriter, r *http.Request) {
 
 // Handler for analytics requests
 
-// GET api/v1/analytics/top
+// GET /api/v1/analytics/top
 func topUrlAnalyticsOperations(w http.ResponseWriter, r *http.Request) {
     paramTop := strings.TrimPrefix(r.URL.Path, topAnalyticsURL)
     paramTop = strings.TrimPrefix(paramTop, "/")
@@ -221,6 +221,8 @@ func topUrlAnalyticsOperations(w http.ResponseWriter, r *http.Request) {
     return
 }
 
+
+// GET /api/v1/analytics/{shortURL}
 func urlAnalyticsOperations(w http.ResponseWriter, r *http.Request) {
     query := r.URL.Query()
     paramURL := strings.TrimPrefix(r.URL.Path, timeAnalyticsURL)
@@ -229,13 +231,27 @@ func urlAnalyticsOperations(w http.ResponseWriter, r *http.Request) {
 
     // If no parameters are specified, provide the usage
     if len(paramURL) == 0 && len(paramHour) == 0 && len(paramDay) == 0 {
-        setErrorResponse(w, "no-params-found", "Usage: /analytics?top=n, /analytics?shortURL=url&hours=n, /analytics?shortURL=url&days=n", http.StatusBadRequest)
+        setErrorResponse(w, "no-params-found", "/analytics/shortURL?hours=n, /analytics?shortURL=url&days=n", http.StatusBadRequest)
         return
     }
 
+    // short URL is required
     if len(paramURL) < 1 {
         log.Println("Url param 'shortURL' is missing")
         setErrorResponse(w, "shortURL-not-found", "short URL is required", http.StatusBadRequest)
+        return
+    }
+
+
+    // If only short URL is provided and no hour or day limits, return the count for the current day
+    if len(paramHour) == 0 && len(paramDay) == 0 {
+        urlCountCurrDay, err := dbService.GetURLCountPastnDays(paramURL, "1")
+        if err != nil {
+            setErrorResponse(w, err.Error(), "Failed to URL calls for 1 day", http.StatusInternalServerError)
+            return
+        }
+
+        createAndSetAnalyticsResponse(w, paramURL, urlCountCurrDay)
         return
     }
 
@@ -247,10 +263,7 @@ func urlAnalyticsOperations(w http.ResponseWriter, r *http.Request) {
             return
         }
 
-        response := make(map[string]int)
-        response[paramURL] = urlCountHour
-
-        setResponseForAnalytics(w, response, http.StatusOK)
+        createAndSetAnalyticsResponse(w, paramURL, urlCountHour)
         return
     }
 
@@ -262,25 +275,16 @@ func urlAnalyticsOperations(w http.ResponseWriter, r *http.Request) {
             return
         }
 
-        response := make(map[string]int)
-        response[paramURL] = urlCountDay
-
-        setResponseForAnalytics(w, response, http.StatusOK)
+        createAndSetAnalyticsResponse(w, paramURL, urlCountDay)
         return
     } 
 
 }
 
+
+
 // Sets the response JSON
 func setResponse(w http.ResponseWriter, response map[string]string, httpStatusCode int) {
-    w.Header().Set("Content-Type", "application/json")
-    w.WriteHeader(httpStatusCode)
-    jsonResponse, _ := json.Marshal(response)
-    w.Write(jsonResponse)
-}
-
-// Sets response JSON for analytics related requests
-func setResponseForAnalytics(w http.ResponseWriter, response map[string]int, httpStatusCode int) {
     w.Header().Set("Content-Type", "application/json")
     w.WriteHeader(httpStatusCode)
     jsonResponse, _ := json.Marshal(response)
@@ -298,5 +302,13 @@ func setErrorResponse(w http.ResponseWriter, errorCode string, errorMessage stri
     w.Write(jsonResponse)
 }
 
-
+// Sets response JSON for analytics related requests
+func createAndSetAnalyticsResponse(w http.ResponseWriter, key string, value int) {
+	response := make(map[string]int)
+    response[key] = value
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(http.StatusOK)
+    jsonResponse, _ := json.Marshal(response)
+    w.Write(jsonResponse)
+}
 
