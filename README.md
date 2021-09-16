@@ -253,10 +253,10 @@ The HTTP server does the following:
 - initializes a LRU cache
 - initializes handlers for endpoints:
   - `/u/` - this is used like a domain for short URLs e.g. `http://localhost/u/myweb`
-  - `/url` - used by POST operation from the form
-  - `/api/v1/url/` - used for REST API
-  - `/api/v1/analytics/` - used for analytics REST API
-  - `/api/v1/analytics/top/` - used for getting top visited URLs
+  - `/url` - used by POST operation by the form
+  - `/api/v1/url/` - URL shortener REST API
+  - `/api/v1/analytics/` - analytics REST API
+  - `/api/v1/analytics/top/` - get top visited URLs
 - listens ans serves port 8080 requests
 
 ### Service functions
