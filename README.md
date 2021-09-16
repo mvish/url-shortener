@@ -91,23 +91,26 @@ Gets and redirects to original URL given a short URL.
 
 + Response 200 OK (application/json)
 
-    ```json
-	   {
-          "longURL": "https://medium.com/wesionary-team/map-types-in-golang-24591abbafc6",
-          "shortURL": "newurl"
-	   }
-	```
+```json
+{
+    "longURL": "https://medium.com/wesionary-team/map-types-in-golang-24591abbafc6",
+    "shortURL": "newurl"
+}
+```
 
 + Response 404 (application/json)
 
-  If no short URL is provided:
+If no short URL is provided:
 
-    ```{"errorCode": "short-url-missing"}```
+```json
+{"errorCode": "short-url-missing"}
+```
 
-  If no long URL is found:
+If no long URL is found:
 
-    ```{"errorCode": "url-not-found"}```
-
+```json
+{"errorCode": "url-not-found"}
+```
 
 ### POST
 
@@ -121,32 +124,36 @@ Fields `longURL`, `alias` and `expiration` are used to create the short URL. Fol
 
 + Request `POST /api/v1/url` (application/json)
 
-	 ```json
-	 {
-	    "longURL": "http://www.mywebsite.com/share?us=2HujKemgLsuI13",
-	    "alias": "my-web",
-	    "expiration": "10-15-2021"
-	 }
-	 ```
+```json
+{
+    "longURL": "http://www.mywebsite.com/share?us=2HujKemgLsuI13",
+	"alias": "my-web",
+	"expiration": "10-15-2021"
+}
+```
 
 + Response 201 (application/json)
 
-	```json
-	{
-		"shortURL": "http://myweb/my-web",
-		"longURL": "http://www.mywebsite.com/share?us=2HujKemgLsuI13"
-	}
-	```
+```json
+{
+    "shortURL": "http://myweb/my-web",
+    "longURL": "http://www.mywebsite.com/share?us=2HujKemgLsuI13"
+}
+```
 
 + Response 400 (application/json)
 	
-	If the request body is not valid:
+If the request body is not valid:
 
-    ```{"errorCode": "malformed-json"}```
+```json
+{"errorCode": "malformed-json"}
+```
 
-    If the long URL is missing:
+If the long URL is missing:
 
-    ```{"errorCode": "missing-long-url"}```
+```json
+{"errorCode": "missing-long-url"}
+```
 
 ### DELETE
 
@@ -179,27 +186,29 @@ Gets the top "n" called short URLs. If no `limit` is provided, top five URLs are
 
 + Response 200
 
-    ```json
-    [
-      {
-        "Url": "newurl",
-        "TotalCalls": 5
-      },
-      {
-        "Url": "id7sydksj",
-        "TotalCalls": 2
-      },
-      {
-        "Url": "b79d4e33",
-        "TotalCalls": 1
-      }
-    ]
-    ```
+```json
+[
+    {
+         "Url": "newurl",
+         "TotalCalls": 5
+    },
+    {
+         "Url": "id7sydksj",
+         "TotalCalls": 2
+    },
+    {
+         "Url": "b79d4e33",
+         "TotalCalls": 1
+    }
+]
+```
 + Response 500
 
 If no rows exists or a database failure occurs:
 
-    ```{errorCode: "failure:get-top-five-row"}```
+```json
+{"errorCode": "failure:get-top-five-row"}
+```
 
 ## URL[/api/v1/analytics/{shortURL}]
 
@@ -219,21 +228,25 @@ Gets the number of times a short URL has been visited in the past "n hours" or "
 
 + Response 200 (application/json)
 
-    ```json
-        {
-           "newurl": 11
-        }
-    ```
+```json
+{
+    "newurl": 11
+}
+```
 
 + Response 400 (application/json)
 
 If no parameters are provided:
 
-    ```{"errorCode": "no-params-found"}```
+```json
+{"errorCode": "no-params-found"}
+```
 
 If no short URL is provided:
 
-    ```{"errorCode": "shortURL-not-found"}```
+```json
+{"errorCode": "shortURL-not-found"}
+```
 
 
 ## References:
