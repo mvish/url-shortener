@@ -127,8 +127,8 @@ Fields `longURL`, `alias` and `expiration` are used to create the short URL. Fol
 ```json
 {
     "longURL": "http://www.mywebsite.com/share?us=2HujKemgLsuI13",
-	"alias": "my-web",
-	"expiration": "10-15-2021"
+    "alias": "my-web",
+    "expiration": "10-15-2021"
 }
 ```
 
