@@ -4,7 +4,7 @@ URL Shortener is an application designed to provide a short and descriptive URL 
 
 ## Design and implementation
 
-This application is primarily designed using Golang, uses SQLite for persisting URLs and related analytics. The user interface is a simple form with fields:
+This application is designed using Golang and uses SQLite for storage. The user interface is a simple form.
 
 - Long URL (required)
 - Alias (optional)
@@ -18,14 +18,22 @@ The application provides two ways of creating and accessing the short URLs.
  - Form
  - REST API
 
-### Implementation
+The form has 3 fields:
 
-The application is implemented broadly in four parts:
+- Long URL (required)
+- Alias (optional)
+- Expiration (optional)
 
-- User interface - takes user input through a form
+If no `Alias` is provided a random alphanumeric string is generated for the short URL.
+If no `Expiration` is provided the URL lives forever.
+
+It generates a short URL that can be accessed as `http://localhost:8080/u/{shortURL}`
+
+The application backend is implemented broadly in 3 parts:
+
 - HTTP server - handles HTTP requests for URL creation, getting long URL and redirecting and analytics
-- Service layer - handles any processing required before sending off the data to database, e.g: checking if URL already exists
-- Persistent layer - handles all the database related queries
+- Service functions - handles any processing required before sending off the data to database, e.g: checking if URL already exists
+- Storage/database function - handles all the database related queries
 
 ## Build and deploy URL Shortener
 
@@ -33,13 +41,15 @@ The application is implemented broadly in four parts:
 
 - Check out the project from: https://github.com/mvish/url-shortener
 
-- If the current directory is not url-shortener, cd to that directory
+- If the current directory is not url-shortener, `cd` to the directory
 
-	```> cd url-shortener```
+	```cd url-shortener```
 
 - Run the following command to build and run the application
 
 	```go build && go run .```
+
+- Go to `http://localhost:8080` to launch the form to create short URL
 
 ### Build from container
 
@@ -57,23 +67,15 @@ To build and deploy using container, make sure [Docker Desktop](https://www.dock
 
 	```docker run -p 8080:8080 -it url-shortener```
 
-## Run URL Shortener
-
-- Go to `http://localhost:8080` to launch the application home page
-
-- The home page contains:
-  
-  - A brief decription of the application
-  - A link to the form that creates short URLs
+- Go to `http://localhost:8080` to launch the form to create short URL
 
 - To create a short URL:
 
-  - Click on the button "Create short URL"
-  - In the form provide a long URL, optionally an alias and an expiration
+  - In the form provide a long URL, optionally provide an alias and an expiration
   - Click on `Create Short URL`
-  - The created short URL should appear at the bottom, click on it to re-direct to original URL
+  - The created short URL will appear at the bottom, click on it to re-direct to original URL
 
-## URL shortener API
+# URL shortener API
 
 An API to create a short URL, redirect short URL to original URL and delete short URLs.
 
@@ -81,7 +83,7 @@ An API to create a short URL, redirect short URL to original URL and delete shor
 
 ### GET
 
-Gets and redirects to original URL given a short URL.
+Given a short URL gets and redirects to its original URL.
 
 + Parameters
 
@@ -120,7 +122,7 @@ Fields `longURL`, `alias` and `expiration` are used to create the short URL. Fol
 
 - `originalURL` - no default
 - `customName` - a randomly generated string
-- `expiration` - 1 year from the date of creation
+- `expiration` - no default, URL lives forever
 
 + Request `POST /api/v1/url` (application/json)
 
@@ -136,7 +138,7 @@ Fields `longURL`, `alias` and `expiration` are used to create the short URL. Fol
 
 ```json
 {
-    "shortURL": "http://myweb/my-web",
+    "shortURL": "my-web",
     "longURL": "http://www.mywebsite.com/share?us=2HujKemgLsuI13"
 }
 ```
@@ -171,16 +173,15 @@ URL to be deleted does not exist:
 {"errorCode": "missing-short-url"}
 ```
 
-
 ## URL shortener analytics API
 
-An API to get top URLs, total number of times a URL is called in past "n" hours and total number of times a URL is called in past "n" days.
+An API to get top URLs, total number of times a URL is called in past "n hours" and total number of times a URL is called in past "n days".
 
 ## URL[/api/v1/analytics/top/{limit}]
 
 ### GET
 
-Gets the top "n" called short URLs. If no `limit` is provided, top five URLs are returned.
+Gets the top "n" visited short URLs. If no `limit` is provided, top five URLs are returned.
 
 + Request `GET /api/v1/analytics/top/3`
 
@@ -248,7 +249,23 @@ If no short URL is provided:
 {"errorCode": "shortURL-not-found"}
 ```
 
+## Things that can be added or improved
+
+- Addition of API key for the APIs
+- User accounts
+- Creating multiple short URLs
+- Handling multiple requests
+- Additional short URL information that can be saved:
+  - domain
+  - geo location of where it was requested from
+  - support for unicode characters
+  - support for more characters allowing for more descriptive URLs
+- Better database schema design, especially for analytics
+  - in the current design the database stores only hourly calls for a URL and all APIs use this data to compute calls in past
+  - the data can be aggregated beforehand and stored is separate tables. This lets it to be used for a separate analytics service
 
 ## References:
-
+- Golang: https://golang.org/doc/
 - HTTP server in go: https://gowebexamples.com/http-server/
+- SQlite: https://www.sqlite.org/docs.html
+- Bootstrap: https://getbootstrap.com/docs/5.1/getting-started/introduction/
