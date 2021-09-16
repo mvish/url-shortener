@@ -2,39 +2,6 @@
 
 URL Shortener is an application designed to provide a short and descriptive URL for a given long URL.
 
-## Design and implementation
-
-This application is designed using Golang and uses SQLite for storage. The user interface is a simple form.
-
-- Long URL (required)
-- Alias (optional)
-- Expiration (optional)
-
-If no `Alias` is provided a random alphanumeric string is generated for the short URL.
-If no `Expiration` is provided the URL lives forever.
-
-The application provides two ways of creating and accessing the short URLs.
-
- - Form
- - REST API
-
-The form has 3 fields:
-
-- Long URL (required)
-- Alias (optional)
-- Expiration (optional)
-
-If no `Alias` is provided a random alphanumeric string is generated for the short URL.
-If no `Expiration` is provided the URL lives forever.
-
-It generates a short URL that can be accessed as `http://localhost:8080/u/{shortURL}`
-
-The application backend is implemented broadly in 3 parts:
-
-- HTTP server - handles HTTP requests for URL creation, getting long URL and redirecting and analytics
-- Service functions - handles any processing required before sending off the data to database, e.g: checking if URL already exists
-- Storage/database function - handles all the database related queries
-
 ## Build and deploy URL Shortener
 
 ### Build from GitHub
@@ -49,11 +16,9 @@ The application backend is implemented broadly in 3 parts:
 
 	```go build && go run .```
 
-- Go to `http://localhost:8080` to launch the form to create short URL
-
 ### Build from container
 
-To build and deploy using container, make sure [Docker Desktop](https://www.docker.com/products/docker-desktop) installed and running.
+To build and deploy using container, make sure [Docker Desktop](https://www.docker.com/products/docker-desktop) is installed and running.
 
 - Change to the url-shortener directory
 	
@@ -66,6 +31,8 @@ To build and deploy using container, make sure [Docker Desktop](https://www.dock
 - Run the application:
 
 	```docker run -p 8080:8080 -it url-shortener```
+
+## Usage
 
 - Go to `http://localhost:8080` to launch the form to create short URL
 
@@ -247,6 +214,90 @@ If no short URL is provided:
 
 ```json
 {"errorCode": "shortURL-not-found"}
+```
+
+# Developer documentation
+
+## Design and implementation
+
+This application is designed using Golang and uses SQLite for storage. The user interface is a simple HTML form.
+
+The application provides two ways of creating and accessing the short URLs.
+
+ - Form
+ - URL shortener API
+
+The form has 3 fields:
+
+- Long URL (required)
+- Alias (optional)
+- Expiration (optional)
+
+If no `Alias` is provided a random alphanumeric string is generated for the short URL.
+If no `Expiration` is provided the URL lives forever.
+
+It generates a short URL that can be accessed as `http://localhost:8080/u/{shortURL}`
+
+The application backend is implemented broadly in 3 parts:
+
+- HTTP server - handles HTTP requests for URL creation, getting long URL and redirecting and analytics
+- Service functions - handles any processing required before sending off the data to database, e.g: checking if URL already exists
+- Storage/database function - handles all the database related queries
+
+### HTTP Server
+
+The HTTP server does the following:
+
+- creates a log file
+- opens a connection to database, creates the tables `url` and `url_count_hourly`
+- initializes a LRU cache
+- initializes handlers for endpoints:
+  - `/u/` - this is used like a domain for short URLs e.g. `http://localhost/u/myweb`
+  - `/url` - used by POST operation from the form
+  - `/api/v1/url/` - used for REST API
+  - `/api/v1/analytics/` - used for analytics REST API
+  - `/api/v1/analytics/top/` - used for getting top visited URLs
+- listens ans serves port 8080 requests
+
+### Service functions
+
+The service functions serve the following purpose:
+
+- validates URLs
+- generates random URL if no alias is provided
+- checks whether a short URL already exists
+- updates overall total calls and total calls per hour for a short URL
+
+### Database functions
+
+The database functions serve the following purpose:
+
+- provides CRUD functionality for URLs
+
+## Database schema
+
+Table `url` stores all URL related information:
+
+```sql
+create table if not exists url (
+    short_url text NOT NULL,
+    long_url text,
+    created text,
+    expiration text,
+    total_calls,
+    PRIMARY KEY (short_url)
+)
+```
+
+Table `url_count_hourly` stores hour bins and number of calls for a URL within the bin:
+
+```sql
+create table if not exists url_count_hourly (
+	start text NOT NULL,
+	short_url text NOT NULL,
+	count int,
+	PRIMARY KEY (start, short_url)
+)
 ```
 
 ## Things that can be added or improved
