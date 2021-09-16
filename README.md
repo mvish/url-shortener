@@ -115,9 +115,9 @@ Creates a unique random or a custom short URL for a long given URL.
 
 Fields `longURL`, `alias` and `expiration` are used to create the short URL. Following are the default values used for these fields:
 
-	- `originalURL` - no default
-	- `customName` - a randomly generated string
-	- `expiration` - 1 year from the date of creation
+- `originalURL` - no default
+- `customName` - a randomly generated string
+- `expiration` - 1 year from the date of creation
 
 + Request `POST /api/v1/url` (application/json)
 
@@ -158,9 +158,9 @@ Deletes a short URL.
 
 + Response 404 (application/json)
 
-URL to be delete does not exist.
+URL to be deleted does not exist:
 
-	```{"errorCode": "missing-short-url"}```
+    ```{"errorCode": "missing-short-url"}```
 
 
 ## URL shortener analytics API
@@ -195,9 +195,9 @@ Gets the top "n" called short URLs. If no `limit` is provided, top five URLs are
     ```
 + Response 500
 
-	If no rows exists or a database failure occurs:
+If no rows exists or a database failure occurs:
 
-	```{errorCode: "failure:get-top-five-row"}```
+    ```{errorCode: "failure:get-top-five-row"}```
 
 ## URL[/api/v1/analytics/{shortURL}]
 
@@ -205,7 +205,7 @@ Gets the top "n" called short URLs. If no `limit` is provided, top five URLs are
 
 Gets the number of times a short URL has been visited in the past "n hours" or "n days".
 
-+ Paramters
++ Parameters
     
     - shortURL(required, string) - short URL for which information needs to be returned
     - hours(optional, string) - represents number of hours in the past from current hour
@@ -217,10 +217,11 @@ Gets the number of times a short URL has been visited in the past "n hours" or "
 
 + Response 200 (application/json)
 
-     ```json
+    ```json
         {
            "newurl": 11
-        }```
+        }
+    ```
 
 + Response 400 (application/json)
 
